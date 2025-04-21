@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="/static/styles.css">
+    <title>Quiz</title>
+</head>
+<body>
+    <div class="container">
+        <h2>Generated Quiz</h2>
+        {% for q in questions %}
+            <div class="question">
+                <p><strong>Q{{ loop.index }}:</strong> {{ q.question_statement }}</p>
+                <ul>
+                    {% for opt in q.options %}
+                        <li>{{ opt }}</li>
+                    {% endfor %}
+                </ul>
+                <p><strong>Answer:</strong> {{ q.answer }}</p>
+            </div>
+        {% endfor %}
+        <a href="/home">← Back to Home</a>
+    </div>
+</body>
+</html>

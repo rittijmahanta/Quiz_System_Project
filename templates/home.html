@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="/static/styles.css">
+    <title>Home</title>
+</head>
+<body>
+    <div class="container">
+        <h2>Welcome {{ session.username }}</h2>
+        <form method="POST">
+            <input type="number" name="duration" placeholder="Scrape duration in minutes" required>
+            <!-- <input type="number" name="num_questions" placeholder="Number of questions" min="1" max="10" required> -->
+            <button type="submit">Extract</button>
+        </form>
+        <h3>Articles:</h3>
+        <ul>
+            {% for article in articles %}
+                <li>
+                    <strong>{{ article[2] }}</strong> ({{ article[4] }})<br>
+                    <input type="number" name="num_questions" placeholder="Number of questions" min="1" max="10" required>
+                    <a href="{{ url_for('quiz', article_id=article[0]) }}">Generate Quiz</a>
+                </li>
+            {% endfor %}
+        </ul>
+        <a href="/logout">Logout</a>
+    </div>
+</body>
+</html>
