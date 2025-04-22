@@ -17,8 +17,18 @@
             {% for article in articles %}
                 <li>
                     <strong>{{ article[2] }}</strong> ({{ article[4] }})<br>
-                    <input type="number" name="num_questions" placeholder="Number of questions" min="1" max="10" required>
-                    <a href="{{ url_for('quiz', article_id=article[0]) }}">Generate Quiz</a>
+                    <form action="{{ url_for('generate_questions', article_id=article[0]) }}" method="POST">
+                        <input type="number" name="num_questions" placeholder="Number of questions" min="1" max="10" required>
+                        <label for="method">Select Method:</label>
+                        <select name="method" required>
+                            <option value="mcq">MCQ</option>
+                            <option value="bool">Boolean</option>
+                            <option value="faq">FAQ</option>
+                            <option value="paraphrase">Paraphrase</option>
+                            <option value="qa">Question Answering</option>
+                        </select>
+                        <button type="submit">Generate Quiz</button>
+                    </form>
                 </li>
             {% endfor %}
         </ul>
