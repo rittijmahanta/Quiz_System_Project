@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 <head>
     <link rel="stylesheet" href="/static/styles.css">
@@ -9,7 +9,7 @@
         <h2>Welcome {{ session.username }}</h2>
         <form method="POST">
             <input type="number" name="duration" placeholder="Scrape duration in minutes" required>
-            <!-- <input type="number" name="num_questions" placeholder="Number of questions" min="1" max="10" required> -->
+            
             <button type="submit">Extract</button>
         </form>
         <h3>Articles:</h3>
@@ -26,13 +26,191 @@
                             <option value="faq">FAQ</option>
                             <option value="paraphrase">Paraphrase</option>
                             <option value="qa">Question Answering</option>
-                        </select>
+                        </select>   
                         <button type="submit">Generate Quiz</button>
                     </form>
                 </li>
             {% endfor %}
+            
         </ul>
         <a href="/logout">Logout</a>
     </div>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="/static/styles.css">
+    <title>Home</title>
+    <style>
+        .article-checkbox {
+            margin-right: 10px;
+        }
+        .combined-quiz {
+            margin-top: 20px;
+            padding: 10px;
+            border-top: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Welcome {{ session.username }}</h2>
+        <form method="POST">
+            <input type="number" name="duration" placeholder="Scrape duration in minutes" required>
+            <button type="submit">Extract</button>
+        </form>
+<!-- New toggle button -->
+<button onclick="toggleArticles()" style="margin-top: 10px;">Choose from Existing Articles</button>
+
+<!-- Wrap article-related content -->
+<div id="articleSection" style="display: none;">
+    <h3>Articles:</h3>
+    <input type="text" id="searchInput" placeholder="Search article title..." style="margin-bottom: 10px; padding: 5px; width: 100%;" onkeyup="filterArticles()">
+    <ul id="articleList">
+        {% for article in articles %}
+            <li class="article-item" data-index="{{ loop.index0 }}" style="display: {{ 'block' if loop.index0 < 10 else 'none' }}">
+                <input type="checkbox" class="article-checkbox" value="{{ article[0] }}">
+                <strong>{{ article[2] }}</strong> ({{ article[4] }})<br>
+                <form action="{{ url_for('generate_questions', article_id=article[0]) }}" method="POST">
+                    <!-- <button type="submit">Generate Quiz</button> -->
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+    <button id="showMoreBtn" onclick="showMoreArticles()">Show More</button>
+
+    
+</div>
+<!-- Toggle for custom article input -->
+<button onclick="toggleCustomInput()" style="margin-top: 20px;">Submit Own Input</button>
+
+<!-- Custom text input area -->
+<div id="customInputSection" style="display: none; margin-top: 10px;">
+    <textarea name="custom_content" id="custom_content" rows="6" style="width: 100%;" placeholder="Enter your custom article or content here..."></textarea>
+</div>
+
+<div class="combined-quiz">
+    <h4>Generate Quiz for Selected Articles:</h4>
+    <form id="combinedForm" action="{{ url_for('generate_questions', article_id=0) }}" method="POST">
+        <input type="hidden" name="selected_articles" id="selected_articles_input">
+        <input type="number" name="num_questions" placeholder="Number of questions" min="0" max="10" required>
+        <label for="method">Select Method:</label>
+        <select name="method" required>
+            <option value="mcq">MCQ</option>
+            <option value="bool">Boolean</option>
+            <option value="faq">FAQ</option>
+            <option value="paraphrase">Paraphrase</option>
+            <option value="qa">Question Answering</option>
+        </select>
+        <button type="submit" onclick="prepareForm()">Generate Quiz</button>
+    </form>
+</div>
+
+
+<script>
+    function toggleArticles() {
+        const articleSection = document.getElementById('articleSection');
+        if (articleSection.style.display === 'none') {
+            articleSection.style.display = 'block';
+        } else {
+            articleSection.style.display = 'none';
+        }
+    }
+</script>
+
+
+<script>
+    let visibleCount = 10;
+
+    function showMoreArticles() {
+        const allArticles = document.querySelectorAll('.article-item');
+        for (let i = visibleCount; i < visibleCount + 10 && i < allArticles.length; i++) {
+            allArticles[i].style.display = 'block';
+        }
+        visibleCount += 10;
+
+        // Hide button if all articles are visible
+        if (visibleCount >= allArticles.length) {
+            document.getElementById('showMoreBtn').style.display = 'none';
+        }
+    }
+
+    function prepareForm() {
+        const checkboxes = document.querySelectorAll('.article-checkbox');
+        const selected = Array.from(checkboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+        document.getElementById('selected_articles_input').value = selected.join(',');
+    }
+</script>
+
+
+
+        <a href="/logout">Logout</a>
+    </div>
+
+    <script>
+        function prepareForm() {
+            const checkboxes = document.querySelectorAll('.article-checkbox');
+            const selected = Array.from(checkboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+            document.getElementById('selected_articles_input').value = selected.join(',');
+        }
+    </script>
+    <script>
+        function toggleArticles() {
+            const articleSection = document.getElementById('articleSection');
+            if (articleSection.style.display === 'none') {
+                articleSection.style.display = 'block';
+            } else {
+                articleSection.style.display = 'none';
+            }
+        }
+    
+        function showMoreArticles() {
+            const allArticles = document.querySelectorAll('.article-item');
+            for (let i = visibleCount; i < visibleCount + 10 && i < allArticles.length; i++) {
+                allArticles[i].style.display = 'block';
+            }
+            visibleCount += 10;
+    
+            if (visibleCount >= allArticles.length) {
+                document.getElementById('showMoreBtn').style.display = 'none';
+            }
+        }
+    
+        function prepareForm() {
+            const checkboxes = document.querySelectorAll('.article-checkbox');
+            const selected = Array.from(checkboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+            document.getElementById('selected_articles_input').value = selected.join(',');
+        }
+    
+        function filterArticles() {
+            const input = document.getElementById('searchInput').value.toLowerCase();
+            const articles = document.querySelectorAll('.article-item');
+    
+            articles.forEach(article => {
+                const title = article.querySelector('strong').textContent.toLowerCase();
+                if (title.includes(input)) {
+                    article.style.display = 'block';
+                } else {
+                    article.style.display = 'none';
+                }
+            });
+        }
+    </script>
+    <script>
+        function toggleCustomInput() {
+            const section = document.getElementById('customInputSection');
+            section.style.display = (section.style.display === 'none') ? 'block' : 'none';
+        }
+    </script>
+    
 </body>
 </html>

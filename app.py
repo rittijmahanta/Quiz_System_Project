@@ -91,37 +91,89 @@ def home():
 #     return render_template('quiz.html', questions=questions)
 
 # @app.route('/generate_questions/<int:article_id>', methods=['POST'])
+# @app.route('/generate_questions/<int:article_id>', methods=['POST'])
+# def generate_questions(article_id):
+#     method = request.form['method']
+#     num_questions = int(request.form['num_questions'])
+
+#     conn = sqlite3.connect(DB_NAME)
+#     c = conn.cursor()
+#     c.execute("SELECT content FROM articles WHERE id = ?", (article_id,))
+#     content = c.fetchone()[0]
+#     conn.close()
+
+#     if method == 'mcq':
+#         questions = generate_mcqs(content, num_questions)
+#         return render_template('mcq.html', questions=questions)
+#     elif method == 'bool':
+#         questions = generate_bool(content, num_questions)
+#         return render_template('bool.html', questions=questions)
+#     elif method == 'faq':
+#         questions = generate_faq(content, num_questions)
+#         return render_template('faq.html', questions=questions)
+#     elif method == 'paraphrase':
+#         questions = generate_paraphrase(content)
+#         return render_template('paraphrase.html', questions=questions)
+#     elif method == 'qa':
+#         # For QA, assume we ask it to answer the first few questions it generates
+#         sample_questions = generate_faq(content, num_questions)  # or any other way to get input_question
+#         questions = generate_answers(content, [q['Question'] for q in sample_questions])
+#         return render_template('qa.html', questions=questions)
+#     else:
+#         questions = []
+#         return render_template('quiz.html', questions=questions)
+
 @app.route('/generate_questions/<int:article_id>', methods=['POST'])
 def generate_questions(article_id):
     method = request.form['method']
     num_questions = int(request.form['num_questions'])
 
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-    c.execute("SELECT content FROM articles WHERE id = ?", (article_id,))
-    content = c.fetchone()[0]
-    conn.close()
+    if article_id == 0:
+        # Handle combined article request
+        # Handle combined article request
+        selected_ids = request.form.get('selected_articles', '')
+        id_list = [int(id.strip()) for id in selected_ids.split(',') if id.strip().isdigit()]
+
+        if not id_list:
+            return "No articles selected", 400
+        
+        conn = sqlite3.connect(DB_NAME)
+        c = conn.cursor()
+        placeholders = ','.join(['?'] * len(id_list))
+        query = f"SELECT content FROM articles WHERE id IN ({placeholders})"
+        c.execute(query, id_list)
+        contents = [row[0] for row in c.fetchall()]
+        conn.close()
+
+        combined_content = '\n\n'.join(contents)
+    else:
+        # Handle single article
+        conn = sqlite3.connect(DB_NAME)
+        c = conn.cursor()
+        c.execute("SELECT content FROM articles WHERE id = ?", (article_id,))
+        content = c.fetchone()[0]
+        conn.close()
+        combined_content = content
 
     if method == 'mcq':
-        questions = generate_mcqs(content, num_questions)
+        questions = generate_mcqs(combined_content, num_questions)
         return render_template('mcq.html', questions=questions)
     elif method == 'bool':
-        questions = generate_bool(content, num_questions)
+        questions = generate_bool(combined_content, num_questions)
         return render_template('bool.html', questions=questions)
     elif method == 'faq':
-        questions = generate_faq(content, num_questions)
+        questions = generate_faq(combined_content, num_questions)
         return render_template('faq.html', questions=questions)
     elif method == 'paraphrase':
-        questions = generate_paraphrase(content)
+        questions = generate_paraphrase(combined_content)
         return render_template('paraphrase.html', questions=questions)
     elif method == 'qa':
-        # For QA, assume we ask it to answer the first few questions it generates
-        sample_questions = generate_faq(content, num_questions)  # or any other way to get input_question
-        questions = generate_answers(content, [q['Question'] for q in sample_questions])
+        sample_questions = generate_faq(combined_content, num_questions)
+        questions = generate_answers(combined_content, [q['Question'] for q in sample_questions])
         return render_template('qa.html', questions=questions)
     else:
-        questions = []
-        return render_template('quiz.html', questions=questions)
+        return render_template('quiz.html', questions=[])
+
 
     # return render_template('quiz.html', questions=questions)
 
