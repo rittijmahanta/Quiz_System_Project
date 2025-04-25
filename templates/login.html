@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 <head>
   <title>Login</title>
@@ -13,8 +13,8 @@
   </form>
   <p>Don't have an account? <a href="/signup">Sign up</a></p>
 </body>
-</html>
-<!-- <!DOCTYPE html>
+</html> -->
+<!DOCTYPE html>
 <html>
 <head>
     <title>Log In</title>
@@ -24,11 +24,11 @@
     <div class="container login-container">
         <h1>Welcome Back!</h1>
         <h2>LOG IN</h2>
-        <form method="POST" action="/login"> <div class="input-group">
-                <label for="username"><img src="user-icon.png" alt="Username"></label>
+        <form method="POST" action="/"> <div class="input-group">
+                <label for="username"><img src="{{url_for('static',filename='images/user-icon.png')}}" alt="Username"></label>
                 <input type="text" id="username" name="username" placeholder="Username" required> </div>
             <div class="input-group">
-                <label for="password"><img src="password-icon.png" alt="Password"></label>
+                <label for="password"><img src="{{url_for('static',filename='images/password-icon.png')}}" alt="Password"></label>
                 <input type="password" id="password" name="password" placeholder="Password" required> </div>
             <button type="submit" class="primary-button">Continue to Account <span class="arrow">→</span></button>
         </form>
@@ -37,4 +37,4 @@
             <p>Don't have an account? <a href="/signup" class="register-link">SIGNUP</a></p> </div>
     </div>
 </body>
-</html> -->
+</html>

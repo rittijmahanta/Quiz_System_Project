@@ -17,13 +17,13 @@ def generate_mcqs(input_text, num_questions=4):  # default remains 4
     result = qg.predict_mcq(payload)
     return result.get("questions", [])
 
-def generate_bool(text, max_qs=4):
-    return qe.predict_boolq({"input_text": text, "max_questions": max_qs})["Boolean Questions"]
+def generate_bool(text, num_questions=4):
+    return qe.predict_boolq({"input_text": text, "max_questions": num_questions})["Boolean Questions"]
 
-def generate_faq(text, max_qs=4):
-    return qg.predict_shortq({"input_text": text, "max_questions": max_qs})["questions"]
+def generate_faq(text, num_questions=4):
+    return qg.predict_shortq({"input_text": text, "max_questions": num_questions})["questions"]
 
-def generate_paraphrase(text, max_qs=3):
+def generate_paraphrase(text, num_questions):
     return qg.paraphrase({"input_text": text})["Paraphrased Questions"]
 
 def generate_answers(text, questions):

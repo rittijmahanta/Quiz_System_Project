@@ -69,11 +69,21 @@
 <div id="articleSection" style="display: none;">
     <h3>Articles:</h3>
     <input type="text" id="searchInput" placeholder="Search article title..." style="margin-bottom: 10px; padding: 5px; width: 100%;" onkeyup="filterArticles()">
+    <label for="from_date">From:</label>
+<input type="date" id="from_date" name="from_date" onchange="filterByDate()" style="margin-right: 10px;">
+
+<label for="to_date">To:</label>
+<input type="date" id="to_date" name="to_date" onchange="filterByDate()">
+
+
     <ul id="articleList">
         {% for article in articles %}
             <li class="article-item" data-index="{{ loop.index0 }}" style="display: {{ 'block' if loop.index0 < 10 else 'none' }}">
                 <input type="checkbox" class="article-checkbox" value="{{ article[0] }}">
-                <strong>{{ article[2] }}</strong> ({{ article[4] }})<br>
+                <!-- <strong>{{ article[2] }}</strong> ({{ article[4] }})<br> -->
+                <a href="{{ article[1] }}" target="_blank"><strong>{{ article[2] }}</strong></a> ({{ article[4] }})<br>
+
+
                 <form action="{{ url_for('generate_questions', article_id=article[0]) }}" method="POST">
                     <!-- <button type="submit">Generate Quiz</button> -->
                 </form>
@@ -90,12 +100,15 @@
 <!-- Custom text input area -->
 <div id="customInputSection" style="display: none; margin-top: 10px;">
     <textarea name="custom_content" id="custom_content" rows="6" style="width: 100%;" placeholder="Enter your custom article or content here..."></textarea>
+
 </div>
 
 <div class="combined-quiz">
     <h4>Generate Quiz for Selected Articles:</h4>
     <form id="combinedForm" action="{{ url_for('generate_questions', article_id=0) }}" method="POST">
         <input type="hidden" name="selected_articles" id="selected_articles_input">
+        <!-- new edition -->
+        <input type="hidden" name="custom_content_hidden" id="custom_content_hidden">
         <input type="number" name="num_questions" placeholder="Number of questions" min="0" max="10" required>
         <label for="method">Select Method:</label>
         <select name="method" required>
@@ -138,13 +151,15 @@
         }
     }
 
-    function prepareForm() {
-        const checkboxes = document.querySelectorAll('.article-checkbox');
-        const selected = Array.from(checkboxes)
-            .filter(cb => cb.checked)
-            .map(cb => cb.value);
-        document.getElementById('selected_articles_input').value = selected.join(',');
-    }
+    // function prepareForm() {
+    //     const checkboxes = document.querySelectorAll('.article-checkbox');
+    //     const selected = Array.from(checkboxes)
+    //         .filter(cb => cb.checked)
+    //         .map(cb => cb.value);
+    //     document.getElementById('selected_articles_input').value = selected.join(',');
+        
+    //     console.log(customContent);
+    // }
 </script>
 
 
@@ -159,8 +174,12 @@
                 .filter(cb => cb.checked)
                 .map(cb => cb.value);
             document.getElementById('selected_articles_input').value = selected.join(',');
+        
+            const customContent = document.getElementById('custom_content').value.trim();
+            document.getElementById('custom_content_hidden').value = customContent;
         }
-    </script>
+        </script>
+        
     <script>
         function toggleArticles() {
             const articleSection = document.getElementById('articleSection');
@@ -183,13 +202,13 @@
             }
         }
     
-        function prepareForm() {
-            const checkboxes = document.querySelectorAll('.article-checkbox');
-            const selected = Array.from(checkboxes)
-                .filter(cb => cb.checked)
-                .map(cb => cb.value);
-            document.getElementById('selected_articles_input').value = selected.join(',');
-        }
+        // function prepareForm() {
+        //     const checkboxes = document.querySelectorAll('.article-checkbox');
+        //     const selected = Array.from(checkboxes)
+        //         .filter(cb => cb.checked)
+        //         .map(cb => cb.value);
+        //     document.getElementById('selected_articles_input').value = selected.join(',');
+        // }
     
         function filterArticles() {
             const input = document.getElementById('searchInput').value.toLowerCase();
@@ -211,6 +230,29 @@
             section.style.display = (section.style.display === 'none') ? 'block' : 'none';
         }
     </script>
+   <script>
+    function filterByDate() {
+        const fromDate = document.getElementById('from_date').value;
+        const toDate = document.getElementById('to_date').value;
+        const articles = document.querySelectorAll('.article-item');
+
+        articles.forEach(article => {
+            const dateText = article.textContent.match(/\((\d{4}-\d{2}-\d{2})\)/);
+            if (!dateText) return;
+
+            const articleDate = dateText[1];
+
+            if ((!fromDate || articleDate >= fromDate) && (!toDate || articleDate <= toDate)) {
+                article.style.display = 'block';
+            } else {
+                article.style.display = 'none';
+            }
+        });
+    }
+</script>
+
+
+    
     
 </body>
 </html>
