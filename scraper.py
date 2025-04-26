@@ -5,14 +5,33 @@ import time
 from datetime import datetime
 import sqlite3
 
+import re
+
 def clean_content(text):
+    # First, extract the portion between "Updated -" and "Published -"
+    match = re.search(r'Updated\s*-\s*.*?IST(.*?)Published\s*-', text, re.DOTALL)
+    if match:
+        text = match.group(1).strip()
+    else:
+        # If pattern not found, fallback to extracting content between two "Published - ... IST"
+        match = re.search(r'Published\s*-\s*.*?IST\s*(.*?)Published\s*-\s*.*?IST', text, re.DOTALL)
+        if match:
+            text = match.group(1).strip()
+
+    # Remove unwanted keywords
     keywords = [
-        "To enjoy additional benefits", "CONNECT WITH US", "Updated -",
-        "BACK TO TOP", "Terms & conditions", "Institutional Subscriber",
-        "Comments have to be in English", "Copyright©"
+        "To enjoy additional benefits", "CONNECT WITH US", "BACK TO TOP",
+        "Terms & conditions", "Institutional Subscriber",
+        "Comments have to be in English", "Copyright©",
+        "e-Paper", "The Hindu On Books", "Data Point",
+        "First Day First Show", "Health Matters",
+        "The View From India", "Science For All",
+        "Karnataka Today", "Today's Cache",
+        "THG PUBLISHING PVT LTD", "community guidelines", "Vuukle"
     ]
     for key in keywords:
         text = text.replace(key, '')
+    
     return text.strip()
 
 def extract_date_from_url(url):

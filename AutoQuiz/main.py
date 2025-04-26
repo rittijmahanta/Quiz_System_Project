@@ -16,9 +16,9 @@ import pke
 import nltk
 import numpy 
 from nltk import FreqDist
-nltk.download('brown', quiet=True, force=True)
-nltk.download('stopwords', quiet=True, force=True)
-nltk.download('popular', quiet=True, force=True)
+nltk.download('brown', quiet=True)
+nltk.download('stopwords', quiet=True)
+nltk.download('popular', quiet=True)
 from nltk.corpus import stopwords
 from nltk.corpus import brown
 from similarity.normalized_levenshtein import NormalizedLevenshtein
@@ -37,7 +37,8 @@ class QGen:
     def __init__(self):
 
         self.tokenizer = T5Tokenizer.from_pretrained('t5-large')
-        model = T5ForConditionalGeneration.from_pretrained('Parth/result')
+        model = T5ForConditionalGeneration.from_pretrained("C:/Users/LENOVO/OneDrive/Desktop/QuestGen/Questgen.ai/aq-v1/checkpoint-45000")
+
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
         # model.eval()
@@ -196,7 +197,7 @@ class BoolQGen:
        
     def __init__(self):
         self.tokenizer = T5Tokenizer.from_pretrained('t5-base')
-        model = T5ForConditionalGeneration.from_pretrained('ramsrigouthamg/t5_boolean_questions')
+        model = T5ForConditionalGeneration.from_pretrained('C:/Users/LENOVO/OneDrive/Desktop/QuestGen/Questgen.ai/AQ-bool')
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
         # model.eval()
@@ -248,7 +249,7 @@ class AnswerPredictor:
           
     def __init__(self):
         self.tokenizer = T5Tokenizer.from_pretrained('t5-large', model_max_length=512)
-        model = T5ForConditionalGeneration.from_pretrained('Parth/boolean')
+        model = T5ForConditionalGeneration.from_pretrained('C:/Users/LENOVO/OneDrive/Desktop/QuestGen/Questgen.ai/AQ-boolean')
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
         # model.eval()

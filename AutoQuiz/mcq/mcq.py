@@ -188,29 +188,64 @@ def get_phrases(doc):
 
 
 
-def get_keywords(nlp,text,max_keywords,s2v,fdist,normalized_levenshtein,no_of_sentences):
+# def get_keywords(nlp,text,max_keywords,s2v,fdist,normalized_levenshtein,no_of_sentences):
+#     doc = nlp(text)
+#     max_keywords = int(max_keywords)
+
+#     keywords = get_nouns_multipartite(text)
+#     keywords = sorted(keywords, key=lambda x: fdist[x])
+#     keywords = filter_phrases(keywords, max_keywords,normalized_levenshtein )
+
+#     phrase_keys = get_phrases(doc)
+#     filtered_phrases = filter_phrases(phrase_keys, max_keywords,normalized_levenshtein )
+
+#     total_phrases = keywords + filtered_phrases
+
+#     total_phrases_filtered = filter_phrases(total_phrases, min(max_keywords, 2*no_of_sentences),normalized_levenshtein )
+
+
+#     answers = []
+#     for answer in total_phrases_filtered:
+#         if answer not in answers and MCQs_available(answer,s2v):
+#             answers.append(answer)
+
+#     answers = answers[:max_keywords]
+#     return answers
+
+def get_keywords(nlp, text, max_keywords, s2v, fdist, normalized_levenshtein, no_of_sentences):
     doc = nlp(text)
     max_keywords = int(max_keywords)
 
+    # Step 1: Get two types of keywords
     keywords = get_nouns_multipartite(text)
     keywords = sorted(keywords, key=lambda x: fdist[x])
-    keywords = filter_phrases(keywords, max_keywords,normalized_levenshtein )
+    keywords_filtered = filter_phrases(keywords, max_keywords, normalized_levenshtein)
 
     phrase_keys = get_phrases(doc)
-    filtered_phrases = filter_phrases(phrase_keys, max_keywords,normalized_levenshtein )
+    filtered_phrases = filter_phrases(phrase_keys, max_keywords, normalized_levenshtein)
 
-    total_phrases = keywords + filtered_phrases
+    total_phrases = keywords_filtered + filtered_phrases
+    total_phrases = list(OrderedDict.fromkeys(total_phrases))  # remove duplicates
+    total_phrases_filtered = filter_phrases(total_phrases, min(max_keywords * 3, 2 * no_of_sentences), normalized_levenshtein)
 
-    total_phrases_filtered = filter_phrases(total_phrases, min(max_keywords, 2*no_of_sentences),normalized_levenshtein )
-
-
+    # Step 2: Now collect MCQ-available answers until you have enough
     answers = []
     for answer in total_phrases_filtered:
-        if answer not in answers and MCQs_available(answer,s2v):
+        if answer not in answers and MCQs_available(answer, s2v):
             answers.append(answer)
+        if len(answers) >= max_keywords:
+            break
 
-    answers = answers[:max_keywords]
-    return answers
+    # Step 3: Final fallback - if still not enough, try unfiltered phrases
+    if len(answers) < max_keywords:
+        for phrase in total_phrases:
+            if phrase not in answers and MCQs_available(phrase, s2v):
+                answers.append(phrase)
+            if len(answers) >= max_keywords:
+                break
+
+    return answers[:max_keywords]
+
 
 
 def generate_questions_mcq(keyword_sent_mapping,device,tokenizer,model,sense2vec,normalized_levenshtein):
