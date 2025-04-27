@@ -33,36 +33,202 @@
 <body>
     <div class="container">
         <h2>Question and Answer</h2>
-        {% for q in questions %}
-            <div class="question">
-                <p><strong>Q{{ loop.index }}:</strong>
-                    {% if q.question_statement %}
-                        {{ q.question_statement }}
-                    {% elif q.Question %}
-                        {{ q.Question }}
-                    {% elif q.ParaphrasedQuestion %}
-                        {{ q.ParaphrasedQuestion }}
-                    {% else %}
-                        {{ q }}
-                    {% endif %}
-                </p>
+        <div id="articleSection" >
+            <h3>Articles:</h3>
+            <input type="text" id="searchInput" placeholder="Search article title..." style="margin-bottom: 10px; padding: 5px; width: 100%;" onkeyup="filterArticles()">
+            <label for="from_date">From:</label>
+            <input type="date" id="from_date" name="from_date" onchange="filterByDate()" style="margin-right: 10px;">
+        
+            <label for="to_date">To:</label>
+            <input type="date" id="to_date" name="to_date" onchange="filterByDate()">
+        
+        
+            <!-- <ul id="articleList">
+                {% for article in articles %}
+                    <li class="article-item" data-index="{{ loop.index0 }}" style="display: {{ 'block' if loop.index0 < 10 else 'none' }}">
+                        <input type="checkbox" class="article-checkbox" value="{{ article[0] }}">
+                        
+                        <a href="{{ article[1] }}" target="_blank"><strong>{{ article[2] }}</strong></a> ({{ article[4] }})<br>
+        
+        
+                        <form action="{{ url_for('generate_questions', article_id=article[0]) }}" method="POST">
+                            
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul> -->
 
-                {% if q.options %}
-                    <ul>
-                        {% for opt in q.options %}
-                            <li>{{ opt }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
+            <ul id="articleList">
+                {% for article in articles %}
+                    <li class="article-item" data-index="{{ loop.index0 }}" style="display: {{ 'block' if loop.index0 < 10 else 'none' }}">
+                        <input type="checkbox" class="article-checkbox" value="{{ article[0] }}">
+                        
+                        <!-- Make title clickable -->
+                        <!-- <a href="#" class="article-link" data-content="{{ article[3] }}"><strong>{{ article[2] }}</strong></a> ({{ article[4] }})<br> -->
+                        <a href="#" class="article-link" data-article-id="{{ article[0] }}" data-content="{{ article[3] }}">
+                            <strong>{{ article[2] }}</strong>
+                        </a> ({{ article[4] }})<br>
+                        
+                        <form action="{{ url_for('generate_questions', article_id=article[0]) }}" method="POST">
+                            <!-- <button type="submit">Generate Quiz</button> -->
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+            
+            <!-- Modal HTML -->
+            <!-- Modal HTML -->
+        <div id="contentModal" class="modal" style="display:none; position:fixed; z-index:1000; top:10%; left:50%; transform:translateX(-50%); background:white; padding:20px; border:1px solid black; box-shadow:0 0 15px rgba(0,0,0,0.3); max-width:600px;">
+            <span id="closeModal" style="float:right; cursor:pointer; font-size:20px;">&times;</span>
 
-                {% if q.answer %}
-                    <p><strong>Answer:</strong> {{ q.answer }}</p>
-                {% elif q.Answer %}
-                    <p><strong>Answer:</strong> {{ q.Answer }}</p>
-                {% endif %}
+            <!-- Scrollable Article Content -->
+            <div id="modalContent" style="margin-top:20px; max-height:300px; overflow-y:auto; border:1px solid #ccc; padding:10px;">
             </div>
-        {% endfor %}
+
+            <!-- Textbox and Answer Button -->
+            <div style="margin-top:15px;">
+                <textarea id="answerBox" rows="3" style="width:100%; padding:8px; resize: vertical;" placeholder="Type your question here..."></textarea>
+                <button id="answerButton" style="margin-top:10px; padding:8px 16px;">Answer</button>
+            </div>
+            <div id="generatedAnswer" style="margin-top:20px; padding:10px; border:1px dashed gray; display:none; max-height:200px; overflow-y:auto;">
+            </div>
+            
+            </div>
+        </div>
+
+
+            <button id="showMoreBtn" onclick="showMoreArticles()">Show More</button>
+        </div>
+        <!-- <div class="combined-quiz">
+            <h4>Generate Quiz for Selected Articles:</h4>
+            <form id="combinedForm" action="{{ url_for('generate_questions', article_id=0) }}" method="POST">
+                <input type="hidden" name="selected_articles" id="selected_articles_input">
+                
+                <input type="hidden" name="custom_content_hidden" id="custom_content_hidden">
+                
+                
+                <button type="submit" onclick="prepareForm()">Generate Quiz</button>
+            </form>
+        </div> -->
+            
+        </div>
+
+                
+                  
         <a href="/home">← Back to Home</a>
     </div>
+
+
+    <!-- Modal CSS -->
+<!-- Modal CSS -->
+<style>
+    .modal {
+        animation: fadeIn 0.3s;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    </style>
+    
+    <!-- Modal JS -->
+    <script>
+    
+    document.addEventListener('DOMContentLoaded', function () {
+    const articleLinks = document.querySelectorAll('.article-link');
+    const modal = document.getElementById('contentModal');
+    const modalContent = document.getElementById('modalContent');
+    const closeModal = document.getElementById('closeModal');
+    let currentArticleId = '';  // store the ID globally
+
+    articleLinks.forEach(link => {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+            const content = this.getAttribute('data-content');
+            const articleId = this.getAttribute('data-article-id');
+            
+            modalContent.innerHTML = content;
+            modal.style.display = 'block';
+            currentArticleId = articleId; // save the article id
+            document.getElementById('generatedAnswer').style.display = 'none'; // hide previous output
+        });
+    });
+
+    closeModal.addEventListener('click', function () {
+        modal.style.display = 'none';
+    });
+
+    window.addEventListener('click', function (e) {
+        if (e.target == modal) {
+            modal.style.display = 'none';
+        }
+    });
+
+    // Handle the Answer button click
+    document.getElementById('answerButton').addEventListener('click', function () {
+        const question = document.getElementById('answerBox').value;
+        if (!question.trim()) {
+            alert("Please type a question first.");
+            return;
+        }
+
+        fetch('/get_answer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ article_id: currentArticleId, question: question })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const generatedAnswer = document.getElementById('generatedAnswer');
+                generatedAnswer.innerHTML = "<b>Answer:</b> " + data.answer;
+                generatedAnswer.style.display = 'block';
+            } else {
+                alert("Error: " + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert("Something went wrong.");
+        });
+    });
+});
+
+    </script>
+
+
+    <script>
+        let visibleCount = 10;
+    
+        function showMoreArticles() {
+            const allArticles = document.querySelectorAll('.article-item');
+            for (let i = visibleCount; i < visibleCount + 10 && i < allArticles.length; i++) {
+                allArticles[i].style.display = 'block';
+            }
+            visibleCount += 10;
+    
+            // Hide button if all articles are visible
+            if (visibleCount >= allArticles.length) {
+                document.getElementById('showMoreBtn').style.display = 'none';
+            }
+        }
+        function filterArticles() {
+            const input = document.getElementById('searchInput').value.toLowerCase();
+            const articles = document.querySelectorAll('.article-item');
+    
+            articles.forEach(article => {
+                const title = article.querySelector('strong').textContent.toLowerCase();
+                if (title.includes(input)) {
+                    article.style.display = 'block';
+                } else {
+                    article.style.display = 'none';
+                }
+            });
+        }
+    
+       
+    </script>    
 </body>
 </html>

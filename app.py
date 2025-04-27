@@ -4,7 +4,7 @@ import os
 from scraper import start_scraping
 # from questgen_interface import generate_mcqs
 from questgen_interface import generate_mcqs, generate_bool, generate_faq, generate_paraphrase, generate_answers
-
+from flask import jsonify # <- `jsonify` instead of `json`
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
@@ -239,6 +239,55 @@ def generate_questions(article_id):
 def logout():
     session.clear()
     return redirect(url_for('login'))
+
+@app.route('/paraphrase', methods=['GET', 'POST'])
+def paraphrase_page():
+    if request.method == 'POST':
+        combined_content = request.form['input_question']
+        num_questions = 1  # ← Fixed: only 1 paraphrase needed
+        questions = generate_paraphrase(combined_content, num_questions)
+        return render_template('paraphrase.html', questions=questions)
+    return render_template('paraphrase.html')
+
+@app.route('/question_answering', methods=['GET', 'POST'])
+def question_answering():
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    c.execute("SELECT * FROM articles ORDER BY id DESC")
+    articles = c.fetchall()
+    conn.close()
+    return render_template('qa.html', articles=articles)  # assuming you have a paraphrase.html
+
+@app.route('/get_answer', methods=['POST'])
+def get_answer():
+    data = request.get_json()
+    article_id = data.get('article_id')
+    question = data.get('question')
+
+    if article_id and question:
+        try:
+            conn = sqlite3.connect(DB_NAME)
+            c = conn.cursor()
+            c.execute("SELECT content FROM articles WHERE id = ?", (article_id,))
+            row = c.fetchone()
+            conn.close()
+
+            if not row:
+                return jsonify({"success": False, "error": "Article not found."})
+
+            content = row[0]
+
+            # Now call your function
+            answers = generate_answers(content, question)
+            return jsonify({"success": True, "answer": answers})
+
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)})
+    else:
+        return jsonify({"success": False, "error": "Missing article_id or question."})
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

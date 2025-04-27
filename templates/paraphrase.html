@@ -1,68 +1,51 @@
-<!-- <!DOCTYPE html>
-<html>
-<head>
-    <link rel="stylesheet" href="/static/styles.css">
-    <title>Quiz</title>
-</head>
-<body>
-    <div class="container">
-        <h2>Generated Quiz</h2>
-        {% for q in questions %}
-            <div class="question">
-                <p><strong>Q{{ loop.index }}:</strong> {{ q.question_statement }}</p>
-                <ul>
-                    {% for opt in q.options %}
-                        <li>{{ opt }}</li>
-                    {% endfor %}
-                </ul>
-                <p><strong>Answer:</strong> {{ q.answer }}</p>
-            </div>
-        {% endfor %}
-        <a href="/home">← Back to Home</a>
-    </div>
-</body>
-</html> -->
-
-
 <!DOCTYPE html>
 <html>
 <head>
+    <title>Paraphrase a Question</title>
     <link rel="stylesheet" href="/static/styles.css">
-    <title>Quiz</title>
+    <style>
+        .container {
+            margin: 50px auto;
+            width: 80%;
+            max-width: 600px;
+            text-align: center;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            resize: vertical;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+        }
+        .result {
+            margin-top: 30px;
+            text-align: left;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h2>Paraphrased Text</h2>
-        {% for q in questions %}
-            <div class="question">
-                <p><strong>Q{{ loop.index }}:</strong>
-                    {% if q.question_statement %}
-                        {{ q.question_statement }}
-                    {% elif q.Question %}
-                        {{ q.Question }}
-                    {% elif q.ParaphrasedQuestion %}
-                        {{ q.ParaphrasedQuestion }}
-                    {% else %}
-                        {{ q }}
-                    {% endif %}
-                </p>
+        <h2>Paraphrase a Question</h2>
+        <form method="POST" action="{{ url_for('paraphrase_page') }}">
+            <textarea name="input_question" rows="5" placeholder="Enter your question here..." required></textarea>
+            <br>
+            <button type="submit">Generate Paraphrase</button>
+        </form>
 
-                {% if q.options %}
-                    <ul>
-                        {% for opt in q.options %}
-                            <li>{{ opt }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-
-                {% if q.answer %}
-                    <p><strong>Answer:</strong> {{ q.answer }}</p>
-                {% elif q.Answer %}
-                    <p><strong>Answer:</strong> {{ q.Answer }}</p>
-                {% endif %}
-            </div>
-        {% endfor %}
-        <a href="/home">← Back to Home</a>
+        {% if questions %}
+        <div class="result">
+            <h3>Paraphrased Questions:</h3>
+            <ul>
+                {% for q in questions %}
+                    <li>{{ q }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
     </div>
 </body>
 </html>
+
