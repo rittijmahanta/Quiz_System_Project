@@ -24,13 +24,21 @@ from similarity.normalized_levenshtein import NormalizedLevenshtein
 from nltk.tokenize import sent_tokenize
 from flashtext import KeywordProcessor
 
-def MCQs_available(word,s2v):
+
+
+def MCQs_available(word, s2v):
     word = word.replace(" ", "_")
-    sense = s2v.get_best_sense(word)
-    if sense is not None:
+    # Try the exact match first
+    if s2v.get_best_sense(word):
         return True
-    else:
-        return False
+    # Try lowercase version
+    if s2v.get_best_sense(word.lower()):
+        return True
+    # Try without punctuation
+    clean_word = word.translate(str.maketrans('', '', string.punctuation))
+    if clean_word != word and s2v.get_best_sense(clean_word):
+        return True
+    return False
 
 
 def edits(word):
@@ -72,19 +80,42 @@ def sense2vec_get_words(word,s2v):
 
     return out
 
-def get_options(answer,s2v):
-    distractors =[]
+# def get_options(answer,s2v):
+#     distractors =[]
 
+#     try:
+#         distractors = sense2vec_get_words(answer,s2v)
+#         if len(distractors) > 0:
+#             print(" Sense2vec_distractors successful for word : ", answer)
+#             return distractors,"sense2vec"
+#     except:
+#         print (" Sense2vec_distractors failed for word : ",answer)
+
+
+#     return distractors,"None"
+
+def get_options(answer, s2v):
+    distractors = []
+    source = "sense2vec"
+    
+    # Try sense2vec first
     try:
-        distractors = sense2vec_get_words(answer,s2v)
-        if len(distractors) > 0:
-            print(" Sense2vec_distractors successful for word : ", answer)
-            return distractors,"sense2vec"
+        distractors = sense2vec_get_words(answer, s2v)
+        if not distractors:
+            source = "None"
     except:
-        print (" Sense2vec_distractors failed for word : ",answer)
-
-
-    return distractors,"None"
+        source = "None"
+    
+    # Fallback: If no distractors, generate some simple variations
+    if not distractors:
+        distractors = [
+            answer + " (incorrect)",
+            "Not " + answer,
+            "Alternative " + answer,
+        ]
+        source = "fallback"
+    
+    return distractors, source
 
 def tokenize_sentences(text):
     sentences = [sent_tokenize(text)]
@@ -212,45 +243,126 @@ def get_phrases(doc):
 #     answers = answers[:max_keywords]
 #     return answers
 
+# def get_keywords(nlp, text, max_keywords, s2v, fdist, normalized_levenshtein, no_of_sentences):
+#     doc = nlp(text)
+#     max_keywords = int(max_keywords)
+
+#     # Get more candidates than needed to account for filtering
+#     keyword_candidates = get_nouns_multipartite(text) or []
+#     phrase_candidates = get_phrases(doc) or []
+    
+#     # Combine and deduplicate
+#     all_candidates = list(OrderedDict.fromkeys(keyword_candidates + phrase_candidates))
+    
+#     # Sort by frequency and length
+#     all_candidates.sort(key=lambda x: (fdist.get(x, 0), len(x)), reverse=True)
+    
+#     # Less aggressive filtering
+#     filtered_candidates = filter_phrases(all_candidates, max_keywords*3, normalized_levenshtein)
+    
+#     # Get MCQs-available answers
+#     answers = []
+#     for candidate in filtered_candidates:
+#         if MCQs_available(candidate, s2v):
+#             answers.append(candidate)
+#             if len(answers) >= max_keywords:
+#                 break
+                
+#     return answers[:max_keywords]
+
+
 def get_keywords(nlp, text, max_keywords, s2v, fdist, normalized_levenshtein, no_of_sentences):
     doc = nlp(text)
     max_keywords = int(max_keywords)
-
-    # Step 1: Get two types of keywords
-    keywords = get_nouns_multipartite(text)
-    keywords = sorted(keywords, key=lambda x: fdist[x])
-    keywords_filtered = filter_phrases(keywords, max_keywords, normalized_levenshtein)
-
-    phrase_keys = get_phrases(doc)
-    filtered_phrases = filter_phrases(phrase_keys, max_keywords, normalized_levenshtein)
-
-    total_phrases = keywords_filtered + filtered_phrases
-    total_phrases = list(OrderedDict.fromkeys(total_phrases))  # remove duplicates
-    total_phrases_filtered = filter_phrases(total_phrases, min(max_keywords * 3, 2 * no_of_sentences), normalized_levenshtein)
-
-    # Step 2: Now collect MCQ-available answers until you have enough
+    
+    # Step 1: Get all possible candidates (nouns, phrases)
+    keyword_candidates = get_nouns_multipartite(text) or []
+    phrase_candidates = get_phrases(doc) or []
+    
+    # Combine and deduplicate
+    all_candidates = list(OrderedDict.fromkeys(keyword_candidates + phrase_candidates))
+    
+    # Sort by importance (frequency + length)
+    all_candidates.sort(key=lambda x: (fdist.get(x, 0), len(x)), reverse=True)
+    
+    # Step 2: First pass - Try to get MCQs_available keywords
     answers = []
-    for answer in total_phrases_filtered:
-        if answer not in answers and MCQs_available(answer, s2v):
-            answers.append(answer)
-        if len(answers) >= max_keywords:
-            break
-
-    # Step 3: Final fallback - if still not enough, try unfiltered phrases
-    if len(answers) < max_keywords:
-        for phrase in total_phrases:
-            if phrase not in answers and MCQs_available(phrase, s2v):
-                answers.append(phrase)
+    for candidate in all_candidates:
+        if MCQs_available(candidate, s2v):
+            answers.append(candidate)
             if len(answers) >= max_keywords:
-                break
-
+                return answers[:max_keywords]
+    
+    # Step 3: Fallback - If not enough, include some even if not in sense2vec
+    remaining_needed = max_keywords - len(answers)
+    if remaining_needed > 0:
+        for candidate in all_candidates:
+            if candidate not in answers:
+                answers.append(candidate)
+                remaining_needed -= 1
+                if remaining_needed == 0:
+                    break
+    
     return answers[:max_keywords]
 
 
+# def generate_questions_mcq(keyword_sent_mapping,device,tokenizer,model,sense2vec,normalized_levenshtein):
+#     batch_text = []
+#     answers = keyword_sent_mapping.keys()
+#     for answer in answers:
+#         txt = keyword_sent_mapping[answer]
+#         context = "context: " + txt
+#         text = context + " " + "answer: " + answer + " </s>"
+#         batch_text.append(text)
 
-def generate_questions_mcq(keyword_sent_mapping,device,tokenizer,model,sense2vec,normalized_levenshtein):
+#     encoding = tokenizer.batch_encode_plus(batch_text, pad_to_max_length=True, return_tensors="pt")
+
+
+#     print ("Running model for generation")
+#     input_ids, attention_masks = encoding["input_ids"].to(device), encoding["attention_mask"].to(device)
+
+#     with torch.no_grad():
+#         outs = model.generate(input_ids=input_ids,
+#                               attention_mask=attention_masks,
+#                               max_length=150)
+
+#     output_array ={}
+#     output_array["questions"] =[]
+# #     print(outs)
+#     for index, val in enumerate(answers):
+#         individual_question ={}
+#         out = outs[index, :]
+#         dec = tokenizer.decode(out, skip_special_tokens=True, clean_up_tokenization_spaces=True)
+
+#         Question = dec.replace("question:", "")
+#         Question = Question.strip()
+#         individual_question["question_statement"] = Question
+#         individual_question["question_type"] = "MCQ"
+#         individual_question["answer"] = val
+#         individual_question["id"] = index+1
+#         individual_question["options"], individual_question["options_algorithm"] = get_options(val, sense2vec)
+
+#         individual_question["options"] =  filter_phrases(individual_question["options"], 10,normalized_levenshtein)
+#         index = 3
+#         individual_question["extra_options"]= individual_question["options"][index:]
+#         individual_question["options"] = individual_question["options"][:index]
+#         individual_question["context"] = keyword_sent_mapping[val]
+     
+#         if len(individual_question["options"])>0:
+#             output_array["questions"].append(individual_question)
+
+#     return output_array
+
+
+def generate_questions_mcq(keyword_sent_mapping, device, tokenizer, model, sense2vec, normalized_levenshtein, max_questions=None):
     batch_text = []
-    answers = keyword_sent_mapping.keys()
+    answers = list(keyword_sent_mapping.keys())
+    
+    # Ensure we have enough answers (pad if necessary)
+    if max_questions and len(answers) < max_questions:
+        # If not enough keywords, reuse some (or modify logic to generate more)
+        answers += answers[:max_questions - len(answers)]
+    
     for answer in answers:
         txt = keyword_sent_mapping[answer]
         context = "context: " + txt
@@ -258,41 +370,37 @@ def generate_questions_mcq(keyword_sent_mapping,device,tokenizer,model,sense2vec
         batch_text.append(text)
 
     encoding = tokenizer.batch_encode_plus(batch_text, pad_to_max_length=True, return_tensors="pt")
-
-
-    print ("Running model for generation")
+    
     input_ids, attention_masks = encoding["input_ids"].to(device), encoding["attention_mask"].to(device)
 
     with torch.no_grad():
-        outs = model.generate(input_ids=input_ids,
-                              attention_mask=attention_masks,
-                              max_length=150)
+        outs = model.generate(input_ids=input_ids, attention_mask=attention_masks, max_length=150)
 
-    output_array ={}
-    output_array["questions"] =[]
-#     print(outs)
-    for index, val in enumerate(answers):
-        individual_question ={}
-        out = outs[index, :]
-        dec = tokenizer.decode(out, skip_special_tokens=True, clean_up_tokenization_spaces=True)
-
-        Question = dec.replace("question:", "")
-        Question = Question.strip()
-        individual_question["question_statement"] = Question
-        individual_question["question_type"] = "MCQ"
-        individual_question["answer"] = val
-        individual_question["id"] = index+1
-        individual_question["options"], individual_question["options_algorithm"] = get_options(val, sense2vec)
-
-        individual_question["options"] =  filter_phrases(individual_question["options"], 10,normalized_levenshtein)
-        index = 3
-        individual_question["extra_options"]= individual_question["options"][index:]
-        individual_question["options"] = individual_question["options"][:index]
-        individual_question["context"] = keyword_sent_mapping[val]
-     
-        if len(individual_question["options"])>0:
-            output_array["questions"].append(individual_question)
-
+    output_array = {"questions": []}
+    
+    for index, val in enumerate(answers[:max_questions] if max_questions else answers):
+        individual_question = {
+            "question_statement": tokenizer.decode(outs[index], skip_special_tokens=True).replace("question:", "").strip(),
+            "question_type": "MCQ",
+            "answer": val,
+            "id": index + 1,
+            "context": keyword_sent_mapping[val],
+        }
+        
+        # Get options (force at least 1 option if possible)
+        options, algo = get_options(val, sense2vec)
+        options = filter_phrases(options, 10, normalized_levenshtein)
+        
+        # If no options, add a dummy one to ensure question is kept
+        if not options:
+            options = ["None"]  # Or generate synthetic options
+        
+        individual_question["options"] = options[:3]  # First 3 as main options
+        individual_question["extra_options"] = options[3:]
+        individual_question["options_algorithm"] = algo
+        
+        output_array["questions"].append(individual_question)
+    
     return output_array
 
 def generate_normal_questions(keyword_sent_mapping,device,tokenizer,model):  #for normal one word questions
