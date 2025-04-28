@@ -194,29 +194,26 @@ class QGen:
 
 
 class BoolQGen:
-       
     def __init__(self):
         self.tokenizer = T5Tokenizer.from_pretrained('t5-base')
-        model = T5ForConditionalGeneration.from_pretrained('D:/cs/AutoQuiz-main/AQ-bool')
+        model = T5ForConditionalGeneration.from_pretrained("D:/cs/AutoQuiz-main/AQ-bool")
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
-        # model.eval()
         self.device = device
         self.model = model
         self.set_seed(42)
-        
-    def set_seed(self,seed):
+
+    def set_seed(self, seed):
         numpy.random.seed(seed)
         torch.manual_seed(seed)
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
 
     def random_choice(self):
-        a = random.choice([0,1])
+        a = random.choice([0, 1])
         return bool(a)
-    
 
-    def predict_boolq(self,payload):
+    def predict_boolq(self, payload):
         start = time.time()
         inp = {
             "input_text": payload.get("input_text"),
@@ -224,32 +221,41 @@ class BoolQGen:
         }
 
         text = inp['input_text']
-        num= inp['max_questions']
+        num = inp['max_questions']
         sentences = tokenize_sentences(text)
         joiner = " "
         modified_text = joiner.join(sentences)
         answer = self.random_choice()
-        form = "truefalse: %s passage: %s </s>" % (modified_text, answer)
+        form = f"truefalse: {modified_text} passage: {answer} </s>"
 
         encoding = self.tokenizer.encode_plus(form, return_tensors="pt")
         input_ids, attention_masks = encoding["input_ids"].to(self.device), encoding["attention_mask"].to(self.device)
 
-        output = beam_search_decoding (input_ids, attention_masks,self.model,self.tokenizer)
-        if torch.device=='cuda':
+        output = beam_search_decoding(input_ids, attention_masks, self.model, self.tokenizer, num_return_sequences=num)
+
+        if len(output) < num:
+            # Duplicate questions if fewer
+            output = (output * (num // len(output) + 1))[:num]
+        elif len(output) > num:
+            output = output[:num]
+
+        if torch.device == 'cuda':
             torch.cuda.empty_cache()
-        
-        final= {}
-        final['Text']= text
-        final['Count']= num
-        final['Boolean Questions']= output
-            
+
+        final = {
+            'Text': text,
+            'Count': num,
+            'Boolean Questions': output
+        }
+
         return final
+
             
 class AnswerPredictor:
           
     def __init__(self):
         self.tokenizer = T5Tokenizer.from_pretrained('t5-large', model_max_length=512)
-        model = T5ForConditionalGeneration.from_pretrained('D:/cs/AutoQuiz-main/AQ-boolean')
+        model = T5ForConditionalGeneration.from_pretrained("D:/cs/AutoQuiz-main/AQ-boolean")
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
         # model.eval()

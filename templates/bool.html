@@ -1,68 +1,133 @@
-<!-- <!DOCTYPE html>
-<html>
-<head>
-    <link rel="stylesheet" href="/static/styles.css">
-    <title>Quiz</title>
-</head>
-<body>
-    <div class="container">
-        <h2>Generated Quiz</h2>
-        {% for q in questions %}
-            <div class="question">
-                <p><strong>Q{{ loop.index }}:</strong> {{ q.question_statement }}</p>
-                <ul>
-                    {% for opt in q.options %}
-                        <li>{{ opt }}</li>
-                    {% endfor %}
-                </ul>
-                <p><strong>Answer:</strong> {{ q.answer }}</p>
-            </div>
-        {% endfor %}
-        <a href="/home">← Back to Home</a>
-    </div>
-</body>
-</html> -->
-
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <link rel="stylesheet" href="/static/styles.css">
-    <title>Quiz</title>
+  <meta charset="UTF-8">
+  <title>Boolean Quiz</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .question {
+      margin-bottom: 20px;
+    }
+    .answer {
+      display: none;
+      margin-top: 5px;
+    }
+    .correct {
+      color: green;
+    }
+    .incorrect {
+      color: red;
+    }
+    .results {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Generated Boolean Quiz</h2>
-        {% for q in questions %}
-            <div class="question">
-                <p><strong>Q{{ loop.index }}:</strong>
-                    {% if q.question_statement %}
-                        {{ q.question_statement }}
-                    {% elif q.Question %}
-                        {{ q.Question }}
-                    {% elif q.ParaphrasedQuestion %}
-                        {{ q.ParaphrasedQuestion }}
-                    {% else %}
-                        {{ q }}
-                    {% endif %}
-                </p>
+  <h2>Boolean Quiz</h2>
+  <form id="quizForm">
+    {% for q in questions %}
+      {% set q_index = loop.index0 %}
+      <div class="question" data-question-index="{{ q_index }}">
+        <p><strong>Q{{ loop.index }}:</strong> 
+          {% if q.question_statement %}
+            {{ q.question_statement }}
+          {% elif q.question %}
+            {{ q.question }}
+          {% else %}
+            {{ q }}
+          {% endif %}
+        </p>
+        <ul>
+          <li>
+            <label>
+              <input type="radio" name="q{{ q_index }}" value="True" onchange="showAnswer({{ q_index }})">
+              True
+            </label>
+          </li>
+          <li>
+            <label>
+              <input type="radio" name="q{{ q_index }}" value="False" onchange="showAnswer({{ q_index }})">
+              False
+            </label>
+          </li>
+        </ul>
+        <button type="button" onclick="clearSelection({{ q_index }})">Clear Selection</button>
+        <div class="answer" id="answer{{ q_index }}">
+          <strong>Correct Answer:</strong> {{ 'True' if q.answer else 'False' }}
+        </div>
+        <input type="hidden" id="correctAnswer{{ q_index }}" value="{{ 'True' if q.answer else 'False' }}">
+      </div>
+      <hr>
+    {% endfor %}
+    <button type="button" onclick="submitQuiz()">Submit Quiz</button>
+  </form>
+  <div id="results" class="results" style="display: none;"></div>
 
-                {% if q.options %}
-                    <ul>
-                        {% for opt in q.options %}
-                            <li>{{ opt }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
+<script>
+function showAnswer(questionIndex) {
+  const selectedOption = document.querySelector(`input[name="q${questionIndex}"]:checked`);
+  const correctAnswer = document.getElementById(`correctAnswer${questionIndex}`).value.trim().toLowerCase();
+  const answerDiv = document.getElementById(`answer${questionIndex}`);
 
-                {% if q.answer %}
-                    <p><strong>Answer:</strong> {{ q.answer }}</p>
-                {% elif q.Answer %}
-                    <p><strong>Answer:</strong> {{ q.Answer }}</p>
-                {% endif %}
-            </div>
-        {% endfor %}
-        <a href="/home">← Back to Home</a>
-    </div>
+  const allOptions = document.querySelectorAll(`input[name="q${questionIndex}"]`);
+  allOptions.forEach(option => {
+    option.disabled = true;
+  });
+
+  if (selectedOption) {
+    answerDiv.style.display = 'block';
+    if (selectedOption.value.trim().toLowerCase() === correctAnswer) {
+      answerDiv.className = 'answer correct';
+    } else {
+      answerDiv.className = 'answer incorrect';
+    }
+  }
+}
+
+function clearSelection(questionIndex) {
+  const options = document.querySelectorAll(`input[name="q${questionIndex}"]`);
+  options.forEach(option => {
+    option.checked = false;
+    option.disabled = false;
+  });
+  const answerDiv = document.getElementById(`answer${questionIndex}`);
+  answerDiv.style.display = 'none';
+  answerDiv.className = 'answer';
+}
+
+function submitQuiz() {
+  const totalQuestions = document.querySelectorAll('.question').length;
+  let correctCount = 0;
+  let incorrectCount = 0;
+  let unansweredCount = 0;
+
+  for (let i = 0; i < totalQuestions; i++) {
+    const selectedOption = document.querySelector(`input[name="q${i}"]:checked`);
+    const correctAnswer = document.getElementById(`correctAnswer${i}`).value.trim().toLowerCase();
+
+    if (!selectedOption) {
+      unansweredCount++;
+      continue;
+    }
+
+    if (selectedOption.value.trim().toLowerCase() === correctAnswer) {
+      correctCount++;
+    } else {
+      incorrectCount++;
+    }
+  }
+
+  const resultDiv = document.getElementById('results');
+  resultDiv.innerHTML = `✅ Correct: ${correctCount} / ${totalQuestions}<br>❌ Incorrect: ${incorrectCount} / ${totalQuestions}<br>❓ Unanswered: ${unansweredCount} / ${totalQuestions}`;
+  resultDiv.style.display = 'block';
+}
+</script>
+
 </body>
 </html>

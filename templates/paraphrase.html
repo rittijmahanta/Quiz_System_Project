@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 <head>
     <title>Paraphrase a Question</title>
@@ -47,5 +47,103 @@
         {% endif %}
     </div>
 </body>
-</html>
+</html> -->
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Paraphrase a Question</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            margin-top: 80px;
+            max-width: 700px;
+            background: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 40px;
+            text-align: center;
+        }
+        h2 {
+            margin-bottom: 30px;
+            font-weight: 700;
+        }
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            border-radius: 10px;
+            border: 1px solid #ced4da;
+            padding: 15px;
+            resize: vertical;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        textarea:focus {
+            border-color: #0d6efd;
+            outline: none;
+            box-shadow: 0 0 0 0.2rem rgba(13,110,253,.25);
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 30px;
+            border: none;
+            background-color: #0d6efd;
+            color: white;
+            font-weight: 600;
+            border-radius: 10px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0b5ed7;
+        }
+        .result {
+            margin-top: 40px;
+            text-align: left;
+        }
+        .result h3 {
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        .result ul {
+            padding-left: 20px;
+        }
+        .result li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Paraphrase a Question ✍️</h2>
+
+        <form method="POST" action="{{ url_for('paraphrase_page') }}">
+            <textarea name="input_question" rows="5" placeholder="Enter your question here..." required></textarea>
+            <br>
+            <button type="submit">Generate Paraphrase</button>
+        </form>
+
+        {% if questions %}
+        <div class="result">
+            <h3>Paraphrased Questions:</h3>
+            <ul>
+                {% for q in questions %}
+                    <li>{{ q }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
