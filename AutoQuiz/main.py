@@ -37,7 +37,7 @@ class QGen:
     def __init__(self):
 
         self.tokenizer = T5Tokenizer.from_pretrained('t5-large')
-        model = T5ForConditionalGeneration.from_pretrained("D:/cs/AutoQuiz-main/AQ-V2-para-Qgen/results (1)/aq-v1/checkpoint-45000")
+        model = T5ForConditionalGeneration.from_pretrained("C:\\8th semester\\Project\\AutoQuiz\\AQ-V2-para-Qgen\\results (1)\\aq-v1\\checkpoint-45000")
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
@@ -196,7 +196,7 @@ class QGen:
 class BoolQGen:
     def __init__(self):
         self.tokenizer = T5Tokenizer.from_pretrained('t5-base')
-        model = T5ForConditionalGeneration.from_pretrained("D:/cs/AutoQuiz-main/AQ-bool")
+        model = T5ForConditionalGeneration.from_pretrained("C:\8th semester\Project\AutoQuiz\AQ-bool")
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
         self.device = device
@@ -255,7 +255,7 @@ class AnswerPredictor:
           
     def __init__(self):
         self.tokenizer = T5Tokenizer.from_pretrained('t5-large', model_max_length=512)
-        model = T5ForConditionalGeneration.from_pretrained("D:/cs/AutoQuiz-main/AQ-boolean")
+        model = T5ForConditionalGeneration.from_pretrained("C:\8th semester\Project\AutoQuiz\AQ-boolean")
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
         # model.eval()

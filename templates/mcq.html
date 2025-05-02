@@ -1,161 +1,243 @@
-<!-- <!DOCTYPE html>
-<html>
-<head>
-    <link rel="stylesheet" href="/static/styles.css">
-    <title>Quiz</title>
-</head>
-<body>
-    <div class="container">
-        <h2>Generated Quiz</h2>
-        {% for q in questions %}
-            <div class="question">
-                <p><strong>Q{{ loop.index }}:</strong> {{ q.question_statement }}</p>
-                <ul>
-                    {% for opt in q.options %}
-                        <li>{{ opt }}</li>
-                    {% endfor %}
-                </ul>
-                <p><strong>Answer:</strong> {{ q.answer }}</p>
-            </div>
-        {% endfor %}
-        <a href="/home">← Back to Home</a>
-    </div>
-</body>
-</html> -->
-
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <link rel="stylesheet" href="/static/styles.css">
-    <title>Quiz</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generated Quiz</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
     <style>
-        .answer { display: none; margin-top: 5px; }
-        .correct { color: green; }
-        .incorrect { color: red; }
-        .results { margin-top: 20px; font-size: 18px; font-weight: bold; }
-        .question ul li {
-            margin-bottom: 10px;
+        body {
+            background: linear-gradient(135deg, #e0eafc, #cfdef3);
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            padding: 30px 20px;
         }
+
+        .quiz-container {
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+            padding: 50px;
+            max-width: 900px;
+            margin: auto;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .question {
+            margin-bottom: 40px;
+        }
+
+        .question ul {
+            padding-left: 0;
+            list-style: none;
+        }
+
+        .question ul li {
             margin-bottom: 20px;
+        }
+
+        .answer {
+            display: none;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+
+        .correct {
+            color: #28a745;
+        }
+
+        .incorrect {
+            color: #dc3545;
+        }
+
+        .results {
+            margin-top: 30px;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .btn-clear {
+            margin-top: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #ccc;
+            padding: 5px 15px;
+            font-size: 14px;
+        }
+
+        .btn-clear:hover {
+            background-color: #e9ecef;
+            cursor: pointer;
+        }
+
+        a.back-link {
+            display: inline-block;
+            margin-top: 30px;
+            font-weight: 600;
+            color: #0d6efd;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        a.back-link:hover {
+            text-decoration: underline;
+            color: #0056b3;
+        }
+
+        .btn-success {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border-radius: 8px;
+        }
+
+        .form-check-label {
+            cursor: pointer;
+            padding: 8px;
+            transition: background-color 0.2s;
+            border-radius: 4px;
+        }
+
+        .form-check-label:hover {
+            background-color: rgba(0, 123, 255, 0.1);
         }
     </style>
 </head>
+
 <body>
-    <div class="container">
-        <h2>Generated Quiz</h2>
-        <form id="quizForm">
-            {% for q in questions %}
-                {% set q_index = loop.index0 %}
-                <div class="question" data-question-index="{{ q_index }}">
-                    <p><strong>Q{{ loop.index }}:</strong>
-                        {% if q.question_statement %}
-                            {{ q.question_statement }}
-                        {% elif q.Question %}
-                            {{ q.Question }}
-                        {% elif q.ParaphrasedQuestion %}
-                            {{ q.ParaphrasedQuestion }}
-                        {% else %}
-                            {{ q }}
-                        {% endif %}
-                    </p>
 
-                    {% if q.options %}
-                        <ul>
-                            {% for opt in q.options %}
-                                <li>
-                                    <label>
-                                        <input type="radio" name="q{{ q_index }}" value="{{ opt }}" onchange="showAnswer({{ q_index }})">
-                                        {{ opt }}
-                                    </label>
-                                </li>
-                            {% endfor %}
-                        </ul>
+<div class="quiz-container">
+    <h2 class="text-center mb-4">📝 Generated Quiz</h2>
+
+    <form id="quizForm">
+        {% for q in questions %}
+            {% set q_index = loop.index0 %}
+            <div class="question" data-question-index="{{ q_index }}">
+                <p><strong>Q{{ loop.index }}:</strong>
+                    {% if q.question_statement %}
+                        {{ q.question_statement }}
+                    {% elif q.Question %}
+                        {{ q.Question }}
+                    {% elif q.ParaphrasedQuestion %}
+                        {{ q.ParaphrasedQuestion }}
+                    {% else %}
+                        {{ q }}
                     {% endif %}
+                </p>
 
-                    <button type="button" onclick="clearSelection({{ q_index }})">Clear Selection</button>
+                {% if q.options %}
+                    <ul>
+                        {% for opt in q.options %}
+                            <li class="form-check">
+                                <input class="form-check-input" type="radio" name="q{{ q_index }}" value="{{ opt }}" id="q{{ q_index }}_{{ loop.index }}" onchange="showAnswer({{ q_index }})">
+                                <label class="form-check-label" for="q{{ q_index }}_{{ loop.index }}">
+                                    {{ opt }}
+                                </label>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
 
-                    {% if q.answer %}
-                        <div class="answer" id="answer{{ q_index }}">
-                            <strong>Correct Answer:</strong> {{ q.answer }}
-                        </div>
-                        <input type="hidden" id="correctAnswer{{ q_index }}" value="{{ q.answer }}">
-                    {% elif q.Answer %}
-                        <div class="answer" id="answer{{ q_index }}">
-                            <strong>Correct Answer:</strong> {{ q.Answer }}
-                        </div>
-                        <input type="hidden" id="correctAnswer{{ q_index }}" value="{{ q.Answer }}">
-                    {% endif %}
-                </div>
-                <hr>
-            {% endfor %}
-            <button type="button" onclick="submitQuiz()">Submit Quiz</button>
-        </form>
+                <button type="button" class="btn btn-outline-secondary btn-sm btn-clear" onclick="clearSelection({{ q_index }})">Clear Selection</button>
 
-        <div id="results" class="results" style="display: none;"></div>
+                {% if q.answer %}
+                    <div class="answer" id="answer{{ q_index }}">
+                        <strong>Correct Answer:</strong> {{ q.answer }}
+                    </div>
+                    <input type="hidden" id="correctAnswer{{ q_index }}" value="{{ q.answer }}">
+                {% elif q.Answer %}
+                    <div class="answer" id="answer{{ q_index }}">
+                        <strong>Correct Answer:</strong> {{ q.Answer }}
+                    </div>
+                    <input type="hidden" id="correctAnswer{{ q_index }}" value="{{ q.Answer }}">
+                {% endif %}
+            </div>
+            <hr>
+        {% endfor %}
 
-        <a href="/home">← Back to Home</a>
+        <div class="d-flex justify-content-center">
+            <button type="button" class="btn btn-success btn-lg mt-3" onclick="submitQuiz()">Submit Quiz</button>
+        </div>
+    </form>
+
+    <div id="results" class="results" style="display: none;"></div>
+
+    <div class="text-center">
+        <a href="/home" class="back-link">← Back to Home</a>
     </div>
+</div>
 
-    <script>
-        function showAnswer(questionIndex) {
-            const selectedOption = document.querySelector(`input[name="q${questionIndex}"]:checked`);
-            const correctAnswer = document.getElementById(`correctAnswer${questionIndex}`).value.trim().toLowerCase();
-            const answerDiv = document.getElementById(`answer${questionIndex}`);
+<!-- Scripts -->
+<script>
+    function showAnswer(questionIndex) {
+        const selectedOption = document.querySelector(`input[name="q${questionIndex}"]:checked`);
+        const correctAnswer = document.getElementById(`correctAnswer${questionIndex}`).value.trim().toLowerCase();
+        const answerDiv = document.getElementById(`answer${questionIndex}`);
 
-            const allOptions = document.querySelectorAll(`input[name="q${questionIndex}"]`);
-            allOptions.forEach(option => {
-                option.disabled = true;
-            });
+        const allOptions = document.querySelectorAll(`input[name="q${questionIndex}"]`);
+        allOptions.forEach(option => {
+            option.disabled = true;
+        });
 
-            if (selectedOption) {
-                answerDiv.style.display = 'block';
-                if (selectedOption.value.trim().toLowerCase() === correctAnswer) {
-                    answerDiv.className = 'answer correct';
-                } else {
-                    answerDiv.className = 'answer incorrect';
-                }
+        if (selectedOption) {
+            answerDiv.style.display = 'block';
+            if (selectedOption.value.trim().toLowerCase() === correctAnswer) {
+                answerDiv.className = 'answer correct';
+            } else {
+                answerDiv.className = 'answer incorrect';
+            }
+        }
+    }
+
+    function clearSelection(questionIndex) {
+        const options = document.querySelectorAll(`input[name="q${questionIndex}"]`);
+        options.forEach(option => {
+            option.checked = false;
+            option.disabled = false;
+        });
+        const answerDiv = document.getElementById(`answer${questionIndex}`);
+        answerDiv.style.display = 'none';
+        answerDiv.className = 'answer'; // reset class
+    }
+
+    function submitQuiz() {
+        const totalQuestions = document.querySelectorAll('.question').length;
+        let correctCount = 0;
+        let incorrectCount = 0;
+        let unansweredCount = 0;
+
+        for (let i = 0; i < totalQuestions; i++) {
+            const selectedOption = document.querySelector(`input[name="q${i}"]:checked`);
+            const correctAnswer = document.getElementById(`correctAnswer${i}`).value.trim().toLowerCase();
+
+            if (!selectedOption) {
+                unansweredCount++;
+                continue;
+            }
+
+            if (selectedOption.value.trim().toLowerCase() === correctAnswer) {
+                correctCount++;
+            } else {
+                incorrectCount++;
             }
         }
 
-        function clearSelection(questionIndex) {
-            const options = document.querySelectorAll(`input[name="q${questionIndex}"]`);
-            options.forEach(option => {
-                option.checked = false;
-                option.disabled = false;
-            });
-            const answerDiv = document.getElementById(`answer${questionIndex}`);
-            answerDiv.style.display = 'none';
-            answerDiv.className = 'answer';  // reset
-        }
+        const resultDiv = document.getElementById('results');
+        resultDiv.innerHTML = `✅ Correct: ${correctCount} / ${totalQuestions}<br>❌ Incorrect: ${incorrectCount} / ${totalQuestions}<br>❓ Unanswered: ${unansweredCount} / ${totalQuestions}`;
+        resultDiv.style.display = 'block';
+    }
+</script>
 
-        function submitQuiz() {
-            const totalQuestions = document.querySelectorAll('.question').length;
-            let correctCount = 0;
-            let incorrectCount = 0;
-            let unansweredCount = 0;
-
-            for (let i = 0; i < totalQuestions; i++) {
-                const selectedOption = document.querySelector(`input[name="q${i}"]:checked`);
-                const correctAnswer = document.getElementById(`correctAnswer${i}`).value.trim().toLowerCase();
-
-                if (!selectedOption) {
-                    unansweredCount++;
-                    continue;
-                }
-
-                if (selectedOption.value.trim().toLowerCase() === correctAnswer) {
-                    correctCount++;
-                } else {
-                    incorrectCount++;
-                }
-            }
-
-            const resultDiv = document.getElementById('results');
-            resultDiv.innerHTML = `✅ Correct: ${correctCount} / ${totalQuestions}<br>❌ Incorrect: ${incorrectCount} / ${totalQuestions}<br>❓ Unanswered: ${unansweredCount} / ${totalQuestions}`;
-            resultDiv.style.display = 'block';
-        }
-    </script>
 </body>
 </html>
